@@ -117,7 +117,7 @@ export default class Maze extends React.Component {
 			outline: 'none'
 		}
 
-		if(this.state.winner === true){
+		if(this.state.winner === true){		
 			setTimeout(() => {
 				this.getTheMaze()
 			},5000)
