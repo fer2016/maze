@@ -3,17 +3,25 @@ import ReactDOM from 'react-dom'
 import request from 'superagent'
 import Wall from './wall/wall'
 import LittleMan from './man/littleMan'
+import Title from './title/title'
 
 export default class Maze extends React.Component {
 
 	constructor(props){
 		super(props)
 		this.getTheMaze()
+		this.windowTimeout = null
 
 		this.state = {
 			matrix: [],
-			winner: false
+			winner: false,
+			inTheMiddle: false,
+			newGameTimer: 6
 		}
+	}
+
+	componentWillUnmount(){
+		clearTimeout(this.windowTimeout)
 	}
 
 	getTheMaze(){
@@ -22,9 +30,12 @@ export default class Maze extends React.Component {
 		  .end( (res,err) => {
 		    this.setState({
 		    	matrix: err.body,
-		    	winner: false
+		    	winner: false,
+		    	inTheMiddle: false,
+		    	newGameTimer: 6
 		    })
   		})
+  	 clearTimeout(this.windowTimeout)
 	}
 
 	handleKeyDown(event){
@@ -80,6 +91,11 @@ export default class Maze extends React.Component {
 		this.state.matrix[x][y] === ' ' || 
 		this.state.matrix[x][y] === 'g' ? result=true : result=false 
 
+		if(x > 4 && y > 4){
+			this.setState({
+				inTheMiddle: true
+			})
+		}
 		if(this.state.matrix[x][y] === 'g'){
 				this.setState({
 					winner: true
@@ -108,6 +124,25 @@ export default class Maze extends React.Component {
 		}
 	}
 
+	isMiddle(){
+		if(!this.state.winner){
+			return this.state.inTheMiddle === true ? 'middle' : 'notMiddle'	
+		}
+		return 'winner'
+	}
+
+	setNumber(){
+		let gameTimer = this.state.newGameTimer
+		console.log(gameTimer)	
+		this.setState({
+				newGameTimer: gameTimer-1		
+		}, () => {
+			if(this.state.newGameTimer > 0){
+				this.windowTimeout = setTimeout(this.setNumber.bind(this),1000)
+			}
+		})
+	}
+
 	render(){	
 		let cols = 19
 		const style = {
@@ -117,20 +152,29 @@ export default class Maze extends React.Component {
 			outline: 'none'
 		}
 
-		if(this.state.winner === true){		
-			setTimeout(() => {
-				this.getTheMaze()
-			},5000)
+		if(this.state.winner){
+			if(this.state.newGameTimer === 0){			
+					this.getTheMaze()
+			}
+			else if(this.state.newGameTimer === 6){
+				setTimeout(this.setNumber.bind(this))
+			}		
 		}
 	
-		return <div style={style} onKeyDown={this.handleKeyDown.bind(this)} tabIndex="1" > {this.state.matrix.map(row => {
-			return row.map(col => {
-				return (
-					<div>
-						{this.getComponent(col)}
-					</div>
-				)
-			})
-		})} </div>
+		return (
+			<div>
+				<Title text={this.isMiddle()} timer={this.state.newGameTimer}/>
+					<div style={style} onKeyDown={this.handleKeyDown.bind(this)} tabIndex="1" > {this.state.matrix.map(row => {
+						return row.map(col => {
+							return (
+								<div>
+									{this.getComponent(col)}
+								</div>
+							)
+						})	
+					})}
+			 </div>
+			</div>
+		)		
 	}
 }
